@@ -154,12 +154,6 @@ function ksep_read($prefix) {
         @mkdir( ENGINE_DIR . "/mrdeath/ksep/episodes_list/", 0777 );
         @chmod( ENGINE_DIR . "/mrdeath/ksep/episodes_list/", 0777 );
     }
-	
-	if( $config['cache_type'] ) {
-		if( $dlefastcache->connection > 0 ) {
-			return $dlefastcache->get($prefix);
-		}
-	}
 
 	$buffer = @file_get_contents( ENGINE_DIR . "/mrdeath/ksep/episodes_list/" . $prefix . ".json" );
 
@@ -177,13 +171,6 @@ function ksep_create($prefix, $cache_text) {
 	
 	if($cache_text === false) $cache_text = '';
 
-	if( $config['cache_type'] ) {
-		if( $dlefastcache->connection > 0 ) {
-			$dlefastcache->set( $prefix, $cache_text );
-			return true;
-		}
-	}
-
 	file_put_contents (ENGINE_DIR . "/mrdeath/ksep/episodes_list/" . $prefix . ".json", $cache_text, LOCK_EX);
 	@chmod( ENGINE_DIR . "/mrdeath/ksep/episodes_list/" . $prefix . ".json", 0666 );
 	
@@ -198,13 +185,6 @@ function ksep_delete($cache_name = false) {
         @mkdir( ENGINE_DIR . "/mrdeath/ksep/episodes_list/", 0777 );
         @chmod( ENGINE_DIR . "/mrdeath/ksep/episodes_list/", 0777 );
     }
-
-	if( $config['cache_type'] ) {
-		if( $dlefastcache->connection > 0 ) {
-			$dlefastcache->clear( $cache_name );
-			return true;
-		}
-	}
 
 	@unlink( ENGINE_DIR . "/mrdeath/ksep/episodes_list/" . $cache_name . ".json" );
 	
