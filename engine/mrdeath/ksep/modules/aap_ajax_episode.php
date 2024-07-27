@@ -119,6 +119,35 @@ if ( file_exists(ENGINE_DIR . '/mrdeath/aaparser/data/config.php') ) {
 	        )));
             
         }
+        elseif ( !$ep_data && isset($series_options['aap']['plus_episode']) && $series_options['aap']['plus_episode'] ) {
+            if ( $sez_count > 1 ) $ksep_seasons_show = 0;
+            elseif ( $sez_count == 1 && $series_options['season']['one_season'] == 1 ) $ksep_seasons_show = 1;
+            else $ksep_seasons_show = 0;
+
+            if ( !isset($episodes_cache[$sez_num]['season_num']) ) $episodes_cache[$sez_num]['season_num'] = $sez_num;
+
+            if ( !isset($episodes_cache[$sez_num]['episodes'][$ep_num]['episode_num']) ) $episodes_cache[$sez_num]['episodes'][$ep_num]['episode_num'] = $ep_num;
+                    
+            if ( !isset($episodes_cache[$sez_num]['episodes'][$ep_num]['date']) ) $episodes_cache[$sez_num]['episodes'][$ep_num]['date'] = $_TIME;
+            $episodes_cache[$sez_num]['episodes'][$ep_num]['approve'] = 1;
+
+            ksort($episodes_cache[$sez_num]);
+            if ( !isset($episodes_cache[$sez_num]['fields']) ) $episodes_cache[$sez_num]['fields'] = '';
+            if ( !isset($episodes_cache[$sez_num]['date']) ) $episodes_cache[$sez_num]['date'] = $_TIME;
+            $episodes_cache[$sez_num]['approve'] = 1;
+            $episodes_cache[$sez_num]['shorturl'] = $ksep_seasons_show;
+            
+            ksort($episodes_cache);
+            
+            $episodes_cache = json_encode($episodes_cache, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+  	
+	        ksep_create('episodes_'.$rowid, $episodes_cache);
+	        
+	        if ( isset($ksep_material) ) die('NewsID '.$rowid.' '.$sez_num.' сезон '.$ep_num.' серия добавлена');
+	        else die(json_encode(array(
+	            'status' => 'ok'
+	        )));
+        }
         else die(json_encode(array(
 	            'error' => 'not ok'
 	        )));
