@@ -116,7 +116,7 @@ elseif ( $action == "update_news" ) {
 }
 elseif ( $action == "update_news_episode" ) {
 	
-	if ( !$_GET['newsid'] && !$_GET['sez_num'] && !$_GET['ep_num'] && !$_GET['ep_data'] ) {
+	if ( !$_GET['newsid'] && !$_GET['sez_num'] && !$_GET['ep_num'] ) {
 	   die(json_encode(array(
 		  'status' => 'fail'
 	   )));
