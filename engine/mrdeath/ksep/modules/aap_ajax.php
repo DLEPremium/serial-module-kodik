@@ -12,8 +12,10 @@ if ( file_exists(ENGINE_DIR . '/mrdeath/aaparser/data/config.php') ) {
     
     if ( $kodik_material_api['results'] ) {
         $ksep_arr = [];
+        $max_season = $max_episode = 0;
         foreach ( $kodik_material_api['results'] as $material_result ) {
             foreach ( $material_result['seasons'] as $snum => $material_season ) {
+                if ( $snum > $max_season ) $max_season = $snum;
                 foreach ( $material_season['episodes'] as $ep_num => $material_episode ) {
                     $ksep_arr[$snum][$ep_num]['players'][$material_result['translation']['title']] = $material_episode['link'].'?season='.$snum.'&episode='.$ep_num.'&only_translations='.$material_result['translation']['id'].'&hide_selectors=true';
                     if ( !isset( $ksep_arr[$snum][$ep_num]['kadr1'] ) && isset($material_episode['screenshots'][0]) ) $ksep_arr[$snum][$ep_num]['kadr1'] = $material_episode['screenshots'][0];
@@ -21,6 +23,17 @@ if ( file_exists(ENGINE_DIR . '/mrdeath/aaparser/data/config.php') ) {
                     if ( !isset( $ksep_arr[$snum][$ep_num]['kadr3'] ) && isset($material_episode['screenshots'][2]) ) $ksep_arr[$snum][$ep_num]['kadr3'] = $material_episode['screenshots'][2];
                     if ( !isset( $ksep_arr[$snum][$ep_num]['kadr4'] ) && isset($material_episode['screenshots'][3]) ) $ksep_arr[$snum][$ep_num]['kadr4'] = $material_episode['screenshots'][3];
                     if ( !isset( $ksep_arr[$snum][$ep_num]['kadr5'] ) && isset($material_episode['screenshots'][4]) ) $ksep_arr[$snum][$ep_num]['kadr5'] = $material_episode['screenshots'][4];
+                    if ( $ep_num > $max_episode ) $max_episode = $ep_num;
+                }
+            }
+        }
+        
+        if ( isset($series_options['aap']['plus_episode']) && $series_options['aap']['plus_episode'] ) {
+            $plus_episode = intval($series_options['aap']['plus_episode']);
+            if ( $plus_episode > 0 ) {
+                for ($i = 1; $i <= $plus_episode; $i++) {
+                    $plus_episode_num = $max_episode+$i;
+                    $ksep_arr[$max_season][$plus_episode_num] = '';
                 }
             }
         }
@@ -49,7 +62,7 @@ if ( file_exists(ENGINE_DIR . '/mrdeath/aaparser/data/config.php') ) {
         }
         else {
             die(json_encode(array(
-	            'error' => 'Не не получили данные от Kodik'
+	            'error' => 'Не получили данные от Kodik'
 	        )));
         }
         
