@@ -7,13 +7,15 @@ if( !defined( 'DATALIFEENGINE' ) ) {
 }
 
 if ( file_exists(ENGINE_DIR . '/mrdeath/aaparser/data/config.php') ) {
-    if ( $shikiid ) $kodik_material_api = request($kodik_api_domain."search?token=".$kodik_apikey."&shikimori_id=".$shikiid."&with_episodes_data=true");
-    elseif ( $mdlid ) $kodik_material_api = request($kodik_api_domain."search?token=".$kodik_apikey."&mdl_id=".$mdlid."&with_episodes_data=true");
+    if ( $shikiid ) $kodik_material_api = request($kodik_api_domain."search?token=".$kodik_apikey."&shikimori_id=".$shikiid."&with_episodes_data=true&with_material_data=true");
+    elseif ( $mdlid ) $kodik_material_api = request($kodik_api_domain."search?token=".$kodik_apikey."&mdl_id=".$mdlid."&with_episodes_data=true&with_material_data=true");
     
     if ( $kodik_material_api['results'] ) {
         $ksep_arr = [];
+        $its_ongoing = false;
         $max_season = $max_episode = 0;
         foreach ( $kodik_material_api['results'] as $material_result ) {
+            if ( $material_result['material_data']['all_status'] == 'ongoing' ) $its_ongoing = true;
             foreach ( $material_result['seasons'] as $snum => $material_season ) {
                 if ( $snum > $max_season ) $max_season = $snum;
                 foreach ( $material_season['episodes'] as $ep_num => $material_episode ) {
@@ -28,7 +30,7 @@ if ( file_exists(ENGINE_DIR . '/mrdeath/aaparser/data/config.php') ) {
             }
         }
         
-        if ( isset($series_options['aap']['plus_episode']) && $series_options['aap']['plus_episode'] ) {
+        if ( $its_ongoing === true && isset($series_options['aap']['plus_episode']) && $series_options['aap']['plus_episode'] ) {
             $plus_episode = intval($series_options['aap']['plus_episode']);
             if ( $plus_episode > 0 ) {
                 for ($i = 1; $i <= $plus_episode; $i++) {
