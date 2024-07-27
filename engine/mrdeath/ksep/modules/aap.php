@@ -7,12 +7,14 @@ if( !defined( 'DATALIFEENGINE' ) ) {
 }
 
 if ( file_exists(ENGINE_DIR . '/mrdeath/aaparser/data/config.php') ) {
-    if ( $shikiid ) $kodik_material_api = request($kodik_api_domain."search?token=".$kodik_apikey."&shikimori_id=".$shikiid."&with_episodes_data=true");
-    elseif ( $mdlid ) $kodik_material_api = request($kodik_api_domain."search?token=".$kodik_apikey."&mdl_id=".$mdlid."&with_episodes_data=true");
+    if ( $shikiid ) $kodik_material_api = request($kodik_api_domain."search?token=".$kodik_apikey."&shikimori_id=".$shikiid."&with_episodes_data=true&with_material_data=true");
+    elseif ( $mdlid ) $kodik_material_api = request($kodik_api_domain."search?token=".$kodik_apikey."&mdl_id=".$mdlid."&with_episodes_data=true&with_material_data=true");
     
     if ( $kodik_material_api['results'] ) {
         $ksep_arr = [];
+        $its_ongoing = false;
         foreach ( $kodik_material_api['results'] as $material_result ) {
+            if ( $material_result['material_data']['all_status'] == 'ongoing' ) $its_ongoing = true;
             foreach ( $material_result['seasons'] as $snum => $material_season ) {
                 foreach ( $material_season['episodes'] as $ep_num => $material_episode ) {
                     $ksep_arr[$snum][$ep_num]['players'][$material_result['translation']['title']] = $material_episode['link'].'?season='.$snum.'&episode='.$ep_num.'&only_translations='.$material_result['translation']['id'].'&hide_selectors=true';
@@ -44,12 +46,15 @@ if ( file_exists(ENGINE_DIR . '/mrdeath/aaparser/data/config.php') ) {
             if ( $ksep_arr ) {
             
                 $material_title = totranslit_it($kodik_material_api['results'][0]['title_orig'], true, false);
+                
+                $max_season = $max_episode = 0;
             
                 if ( count($ksep_arr) > 1 ) $ksep_seasons_show = 0;
                 elseif ( count($ksep_arr) == 1 && $series_options['season']['one_season'] == 1 ) $ksep_seasons_show = 1;
                 else $ksep_seasons_show = 0;
                 foreach ( $ksep_arr as $snum => $ksep_eps ) {
                     if ( !isset($episodes_cache[$snum]['season_num']) ) $episodes_cache[$snum]['season_num'] = $snum;
+                    if ( $snum > $max_season ) $max_season = $snum;
                     foreach ( $ksep_eps as $epnum => $ksep_players ) {
                         if ( isset($episodes_cache[$snum]['episodes'][$epnum]['fields']) && $episodes_cache[$snum]['episodes'][$epnum]['fields'] ) $episode_fields = xfieldsdataload($episodes_cache[$snum]['episodes'][$epnum]['fields']);
                         else $episode_fields = [];
@@ -128,6 +133,7 @@ if ( file_exists(ENGINE_DIR . '/mrdeath/aaparser/data/config.php') ) {
                         $episodes_cache[$snum]['episodes'][$epnum]['players'] = json_encode($ksep_players_arr, JSON_UNESCAPED_UNICODE);
                         if ( !isset($episodes_cache[$snum]['episodes'][$epnum]['date']) ) $episodes_cache[$snum]['episodes'][$epnum]['date'] = $_TIME;
                         $episodes_cache[$snum]['episodes'][$epnum]['approve'] = 1;
+                        if ( $epnum > $max_episode ) $max_episode = $epnum;
                     }
                     ksort($episodes_cache[$snum]);
                     if ( !isset($episodes_cache[$snum]['fields']) ) $episodes_cache[$snum]['fields'] = '';
@@ -137,6 +143,19 @@ if ( file_exists(ENGINE_DIR . '/mrdeath/aaparser/data/config.php') ) {
                 }
             
                 ksort($episodes_cache);
+                
+                if ( $its_ongoing === true && isset($series_options['aap']['plus_episode']) && $series_options['aap']['plus_episode'] ) {
+                    $plus_episode = intval($series_options['aap']['plus_episode']);
+                    if ( $plus_episode > 0 ) {
+                        for ($i = 1; $i <= $plus_episode; $i++) {
+                            $plus_episode_num = $max_episode+$i;
+                            $episodes_cache[$max_season]['episodes'][$plus_episode_num]['episode_num'] = $plus_episode_num;
+                            $episodes_cache[$max_season]['episodes'][$plus_episode_num]['date'] = $_TIME;
+                            $episodes_cache[$max_season]['episodes'][$plus_episode_num]['approve'] = 1;
+                        }
+                        ksort($episodes_cache[$max_season]['episodes']);
+                    }
+                }
             
                 $episodes_cache = json_encode($episodes_cache, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
   	
@@ -169,6 +188,16 @@ if ( file_exists(ENGINE_DIR . '/mrdeath/aaparser/data/config.php') ) {
                         $ksep_cron_data = json_encode($ksep_players, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
                         $ksep_cron_data = $db->safesql($ksep_cron_data);
                         $db->query( "INSERT INTO " . PREFIX . "_ksep_cron (news_id, season, episode, data, season_count, title) values ('{$rowid}', '{$snum}', '{$epnum}', '{$ksep_cron_data}', '{$ksep_count_seasons}', '{$material_title}')" );
+                    }
+                }
+            }
+            
+            if ( isset($series_options['aap']['plus_episode']) && $series_options['aap']['plus_episode'] ) {
+                $plus_episode = intval($series_options['aap']['plus_episode']);
+                if ( $plus_episode > 0 ) {
+                    for ($i = 1; $i <= $plus_episode; $i++) {
+                        $plus_episode_num = $max_episode+$i;
+                        $db->query( "INSERT INTO " . PREFIX . "_ksep_cron (news_id, season, episode, data, season_count, title) values ('{$rowid}', '{$max_season}', '{$plus_episode_num}', '', '{$ksep_count_seasons}', '{$material_title}')" );
                     }
                 }
             }
