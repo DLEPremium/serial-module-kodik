@@ -37,7 +37,7 @@ if ( file_exists(ENGINE_DIR . '/mrdeath/aaparser/data/config.php') ) {
                     $plus_episode_num = $max_episode+$i;
                     $ksep_arr[$max_season][$plus_episode_num] = '';
                 }
-            }
+            } 
         }
         
         $material_title = totranslit_it($kodik_material_api['results'][0]['title_orig'], true, false);
